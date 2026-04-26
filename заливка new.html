@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orange Pro: Типография</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+<script>pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+
+<style>
+:root{--primary-color:#ff6b00;--hover-color:#e65c00;--light-bg:#fff5e6;--border-color:#ffcc99;--text-color:#333;--money-color:#28a745;--tab-inactive:#f8f9fa;--success-color:#28a745;--shadow-sm:0 2px 8px rgba(0,0,0,.05)}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;padding:20px;background-color:#f7f9fc;color:var(--text-color);margin:0}
+.container{max-width:1200px;margin:0 auto;background:white;padding:30px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.08);border-top:5px solid var(--primary-color)}
+h1{text-align:center;color:var(--primary-color);margin-bottom:25px;display:flex;align-items:center;justify-content:center;gap:10px}
+h2,h3{text-align:center;color:#444;margin:20px 0 15px}
+.upload-area{border:2px dashed var(--border-color);padding:50px 20px;text-align:center;border-radius:12px;cursor:pointer;transition:all .3s ease;margin-bottom:25px;display:block;background-color:#fffcf9;position:relative}
+.upload-area:hover{border-color:var(--primary-color);background-color:var(--light-bg);transform:translateY(-2px)}
+.upload-area.drag-over{border-color:var(--money-color);background-color:#f0fff4;transform:scale(1.02)}
+.upload-area p{margin:15px 0 0;color:#888;font-size:15px}
+.btn-upload{background-color:var(--primary-color);color:white;padding:12px 30px;border-radius:50px;cursor:pointer;font-size:16px;font-weight:600;border:none;pointer-events:none;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 15px rgba(255,107,0,.3)}
+button.btn-clear{background-color:#fff;color:#dc3545;border:2px solid #dc3545;padding:10px 25px;border-radius:50px;cursor:pointer;font-size:14px;font-weight:bold;margin-top:15px;display:inline-flex;align-items:center;gap:5px;transition:.2s}
+button.btn-clear:hover{background-color:#dc3545;color:white}
+button.btn-download{background-color:var(--success-color);color:white;padding:6px 12px;border-radius:6px;text-decoration:none;font-size:13px;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+input[type=file]{display:none}
+.progress-bar-container{width:100%;background-color:#eee;border-radius:10px;margin:15px 0;display:none;height:10px;overflow:hidden}
+.progress-bar{width:0;height:100%;background-color:var(--primary-color);transition:width .3s}
+.controls-panel{background:#fff;border:1px solid #eee;padding:20px;border-radius:12px;margin-bottom:25px;box-shadow:var(--shadow-sm)}
+.tabs{display:flex;gap:8px;margin-bottom:20px;border-bottom:2px solid #eee;flex-wrap:wrap}
+.tab{padding:12px 20px;cursor:pointer;background:transparent;border-radius:8px 8px 0 0;border:none;font-weight:600;color:#777;transition:.3s;display:flex;align-items:center;gap:8px;position:relative;top:2px}
+.tab:hover{color:var(--primary-color);background:#fffcf9}
+.tab.active{background:white;color:var(--primary-color);border-bottom:2px solid var(--primary-color);z-index:2}
+#tab-layout{margin-left:auto;color:#8e44ad}#tab-layout.active{color:#8e44ad;border-bottom-color:#8e44ad}
+#tab-converter{color:#d35400}#tab-converter.active{border-bottom-color:#d35400}
+#tab-manual{color:#155724}#tab-manual.active{border-bottom-color:#155724}
+.options-row{display:flex;gap:20px;align-items:flex-end;justify-content:center;margin-top:10px;flex-wrap:wrap}
+label{font-weight:600;color:#555;font-size:13px;margin-bottom:5px;display:block}
+select{display:none}
+.custom-select-wrapper{position:relative;user-select:none;width:220px}
+.custom-select{position:relative;display:flex;flex-direction:column}
+.custom-select__trigger{position:relative;display:flex;align-items:center;justify-content:space-between;padding:10px 15px;font-size:14px;font-weight:500;color:#444;height:42px;box-sizing:border-box;background:#fff;border:1px solid #ddd;border-radius:8px;cursor:pointer;transition:.3s}
+.custom-select__trigger:hover{border-color:var(--primary-color)}
+.custom-options{position:absolute;display:block;top:100%;left:0;right:0;border:1px solid #ffcc99;border-radius:8px;box-shadow:0 5px 15px rgba(255,107,0,.15);background:#fff;transition:all .3s;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-10px);z-index:100;overflow:hidden;margin-top:5px}
+.custom-select.open .custom-options{opacity:1;visibility:visible;pointer-events:all;transform:translateY(0)}
+.custom-option{position:relative;display:block;padding:10px 15px;font-size:14px;color:#444;cursor:pointer;transition:all .2s}
+.custom-option:hover,.custom-option.selected{background-color:var(--primary-color);color:#fff}
+.arrow{position:relative;height:10px;width:10px}.arrow:before,.arrow:after{content:"";position:absolute;bottom:0;width:.15rem;height:100%;transition:all .3s}.arrow:before{left:-3px;transform:rotate(45deg);background:#888}.arrow:after{left:3px;transform:rotate(-45deg);background:#888}.open .arrow:before{transform:rotate(-45deg);background:var(--primary-color)}.open .arrow:after{transform:rotate(45deg);background:var(--primary-color)}
+.checkbox-wrapper{display:flex;align-items:center;height:42px;background:#fff;padding:0 15px;border:1px solid #ddd;border-radius:8px;cursor:pointer;transition:.3s}
+.checkbox-wrapper:hover{border-color:var(--primary-color)}
+.checkbox-wrapper input{width:18px;height:18px;cursor:pointer;margin-right:8px;accent-color:var(--primary-color)}
+.checkbox-wrapper label{margin:0;cursor:pointer;display:flex;align-items:center}
+.summary-box{display:flex;gap:20px;margin-top:30px;justify-content:space-around;flex-wrap:wrap}
+.card{background:#fff;border:1px solid #eee;border-radius:12px;padding:20px;flex:1;min-width:200px;text-align:center;box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+.card h3{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#888;margin:0 0 10px}
+.card .val{font-size:36px;font-weight:800;color:var(--primary-color)}
+.card.price-card{border:2px solid var(--money-color);background-color:#f0fff4}
+.card.price-card .val{color:var(--money-color);font-size:42px}
+table{width:100%;border-collapse:separate;border-spacing:0;margin-top:15px;margin-bottom:30px;font-size:14px;border-radius:8px;overflow:hidden;border:1px solid #eee}
+th,td{border-bottom:1px solid #eee;border-right:1px solid #eee;padding:12px 10px;text-align:center}
+th{background-color:#343a40;color:white;font-weight:500;vertical-align:middle;text-transform:uppercase;font-size:12px;letter-spacing:.5px}
+th.orange-head{background-color:var(--primary-color);border-color:var(--primary-color)}
+tr:last-child td{border-bottom:none}tr:hover td{background-color:#fcfcfc}
+.cell-active{background-color:#ffe0b2!important;color:#d35400;font-weight:700}
+.calc-input{width:100%;padding:10px;box-sizing:border-box;border:1px solid #ddd;border-radius:6px;font-weight:bold;color:var(--primary-color);outline:none;transition:.2s;font-family:monospace;font-size:15px}
+.calc-input:focus{border-color:var(--primary-color);background:#fff5e6;box-shadow:0 0 0 3px rgba(255,107,0,.1)}
+td .calc-input{width:70px;text-align:center;padding:8px}
+.file-list{margin-top:20px}.file-item{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid #eee;border-radius:8px;margin-bottom:8px;background:white;transition:.2s}.file-item:hover{box-shadow:var(--shadow-sm);transform:translateX(2px)}.file-name{font-weight:600;width:40%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:8px}.file-status{color:#888;width:30%;text-align:right;font-size:13px}.file-action{width:20%;text-align:right}
+#download-all-btn{display:none;width:100%;margin-top:20px;padding:15px;background-color:var(--primary-color);color:white;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;transition:.3s;box-shadow:0 4px 15px rgba(255,107,0,.2)}
+#download-all-btn:hover{background-color:#e65c00;transform:translateY(-1px)}
+.loader{border:2px solid #f3f3f3;border-top:2px solid var(--primary-color);border-radius:50%;width:14px;height:14px;animation:spin 1s linear infinite;display:inline-block;vertical-align:middle}@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+.hidden{display:none!important}
+.layout-wrapper{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;margin-top:20px}.layout-settings{flex:0 0 320px;background:#fbfbfc;padding:20px;border-radius:12px;border:1px solid #e2e8f0;box-shadow:var(--shadow-sm)}.layout-preview-pane{flex:1;min-width:400px;background:#eef2f6;padding:30px;border-radius:12px;display:flex;flex-direction:column;align-items:center;box-shadow:inset 0 2px 10px rgba(0,0,0,.05)}
+.layout-row{display:flex;gap:15px;margin-bottom:15px}.layout-row>div{flex:1}.preset-btn{background:#fff;border:1px solid #ddd;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;margin-bottom:8px;margin-right:5px;color:#555;transition:.2s;font-weight:600}.preset-btn:hover{background:#8e44ad;border-color:#8e44ad;color:white}
+.sheet-preview{background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.15);position:relative;border-radius:2px;transition:.3s;margin-top:15px}.slot-preview{position:absolute;border:1px dashed rgba(142,68,173,.4);background:rgba(142,68,173,.05);display:flex;justify-content:center;align-items:center;overflow:hidden}.slot-preview img{width:100%;height:100%}.slot-preview img.contain{object-fit:contain;background:#fff}.slot-preview img.cover{object-fit:cover}.slot-bleed-guide{position:absolute;border:1px solid rgba(0,0,0,.1);pointer-events:none;z-index:2}.margin-guide{position:absolute;border:1px dashed #cbd5e1;pointer-events:none;z-index:1}
+.layout-stat-box{display:flex;gap:10px;width:100%;margin-bottom:15px}.l-stat{flex:1;background:white;padding:15px;border-radius:8px;text-align:center;box-shadow:0 2px 5px rgba(0,0,0,.05);border:1px solid #eee}.l-stat div{font-size:12px;color:#888;text-transform:uppercase;font-weight:bold;margin-bottom:5px}.l-stat span{font-size:24px;font-weight:900;color:#8e44ad}
+.btn-purple{background:#8e44ad;color:white;border:none;padding:12px;width:100%;border-radius:8px;font-weight:bold;font-size:15px;cursor:pointer;transition:.2s;display:flex;justify-content:center;align-items:center;gap:8px;box-shadow:0 4px 15px rgba(142,68,173,.3)}.btn-purple:hover{background:#732d91;transform:translateY(-2px)}.btn-purple:disabled{background:#ccc;cursor:not-allowed;box-shadow:none;transform:none}
+#layout-images-preview{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.layout-thumb{width:45px;height:45px;border-radius:6px;object-fit:cover;border:2px solid #ddd}
+.page-map-box{background:#f8f9fa;padding:15px;border-radius:8px;margin-top:20px;border-left:4px solid #6c757d;font-size:13px;line-height:1.6}.page-map-row{margin-bottom:5px;font-family:monospace}.page-map-fmt{font-weight:bold;color:var(--primary-color)}.details-toggle{width:100%;text-align:center;margin-top:15px;padding:12px;background:#e9ecef;border:none;cursor:pointer;font-weight:700;color:#495057;border-radius:6px;transition:.2s;display:flex;align-items:center;justify-content:center;gap:5px}.details-toggle:hover{background:#dee2e6}#log-console{display:none;background:#212529;color:#ffc107;font-family:Consolas,monospace;padding:15px;max-height:300px;overflow-y:auto;font-size:12px;margin-top:10px;border-radius:8px}.log-row{border-bottom:1px solid #343a40;padding:5px 0;display:flex;justify-content:space-between;gap:8px}
+</style>
+</head>
+
+<body>
+<div class="container">
+<h1><span class="iconify" data-icon="mdi:printer-3d-nozzle-outline" data-width="32"></span> Orange Pro: Типография</h1>
+
+<div class="controls-panel">
+<div class="tabs">
+<div class="tab active" onclick="setMode('real')" id="tab-real"><span class="iconify" data-icon="mdi:aspect-ratio"></span> Калькулятор 1:1</div>
+<div class="tab" onclick="setMode('all_one')" id="tab-all_one"><span class="iconify" data-icon="mdi:fit-to-page-outline"></span> Всё на один формат</div>
+<div class="tab" onclick="setMode('hybrid')" id="tab-hybrid"><span class="iconify" data-icon="mdi:arrow-collapse-all"></span> А4 + Остальное сжать</div>
+<div class="tab" onclick="setMode('manual')" id="tab-manual"><span class="iconify" data-icon="mdi:calculator"></span> Ручной ввод</div>
+<div class="tab" onclick="setMode('converter')" id="tab-converter"><span class="iconify" data-icon="mdi:image-refresh"></span> Конвертер фото</div>
+<div class="tab" onclick="setMode('layout')" id="tab-layout"><span class="iconify" data-icon="mdi:view-grid-plus"></span> Спуск полос</div>
+</div>
+
+<div class="options-row" id="auto-options">
+<div id="opt-all_one" style="display:none;"><label>Печатать ВСЁ на:</label><div class="custom-select-wrapper" style="width:150px"><select id="sel-target-all" class="custom-select-source" onchange="recalculate()"><option value="A4">A4</option><option value="A3">A3</option><option value="A2">A2</option><option value="A1">A1</option><option value="A0">A0</option></select></div></div>
+<div id="opt-hybrid" style="display:none;"><label>А4 как А4. Большие до:</label><div class="custom-select-wrapper" style="width:150px"><select id="sel-target-big" class="custom-select-source" onchange="recalculate()"><option value="A3">A3</option><option value="A2">A2</option><option value="A1">A1</option><option value="A0">A0</option><option value="A4">A4</option></select></div></div>
+<div><label>Тип бумаги (А4/А3):</label><div class="custom-select-wrapper"><select id="sel-paper" class="custom-select-source" onchange="recalculate()"><option value="80">Обычная (80 г/м²)</option><option value="120">Мелованная (120 г/м²)</option><option value="170">Мелованная (170 г/м²)</option><option value="200">Мелованная (200 г/м²)</option><option value="300">Мелованная (300 г/м²)</option></select></div></div>
+<div class="checkbox-wrapper"><label><input type="checkbox" id="chk-fast-pdf" checked><span>Быстрый расчет PDF</span></label></div>
+<div class="checkbox-wrapper">
+    <label>
+        <input type="checkbox" id="chk-self-adhesive" onchange="recalculate()"> 
+        <span>Самоклейка</span>
+    </label>
+</div>
+<div class="checkbox-wrapper"><label><input type="checkbox" id="chk-force-bw" onchange="recalculate()"><span>Всё в Ч/Б</span></label></div>
+</div>
+
+<div class="options-row hidden" id="manual-options">
+<div><label>Тип бумаги (А4/А3):</label><div class="custom-select-wrapper"><select id="sel-paper-manual" class="custom-select-source" onchange="recalculateManual()"><option value="80">Обычная (80 г/м²)</option><option value="120">Мелованная (120 г/м²)</option><option value="170">Мелованная (170 г/м²)</option><option value="200">Мелованная (200 г/м²)</option><option value="300">Мелованная (300 г/м²)</option></select></div></div>
+<div class="checkbox-wrapper">
+    <label>
+        <input type="checkbox" id="chk-self-adhesive-manual" onchange="recalculateManual()"> 
+        <span>Самоклейка</span>
+    </label>
+</div>
+<div style="color:#666;font-size:14px;margin-bottom:5px">* Поддерживаются выражения (напр. 10+5)</div>
+</div>
+
+</div>
+
+<div id="calculator-upload-block">
+<label class="upload-area" id="drop-area">
+<span class="btn-upload"><span class="iconify" data-icon="mdi:cloud-upload" data-width="20"></span> Выберите файлы для Расчета</span>
+<p>PDF, JPG, DOCX, PPTX. PDF больше 10 МБ анализируются ускоренно.</p>
+<input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.docx,.pptx">
+</label>
+<div class="progress-bar-container" id="progressContainer"><div class="progress-bar" id="progressBar"></div></div>
+<div id="status" style="text-align:center;color:#666;font-weight:bold">Ожидание файлов...</div>
+</div>
+
+<div id="converter-content" class="hidden">
+<div class="options-row" style="margin-bottom:25px;background:#fffcf9;padding:20px;border-radius:12px;border:1px solid #ffcc99;justify-content:center;align-items:center;gap:40px">
+<div><label style="text-align:center">Формат вывода:</label><div class="custom-select-wrapper" style="width:140px"><select id="conv-format" class="custom-select-source" onchange="toggleQualitySlider()"><option value="jpeg">JPG</option><option value="png">PNG</option></select></div></div>
+<div><label style="text-align:center">Разрешение (DPI):</label><div class="custom-select-wrapper" style="width:140px"><select id="conv-dpi" class="custom-select-source"><option value="300">300 DPI</option><option value="200">200 DPI</option><option value="600">600 DPI</option><option value="1200">1200 DPI</option></select></div></div>
+<div id="quality-container" style="display:flex;flex-direction:column;align-items:center;width:220px;transition:opacity .3s"><label>Качество (только JPG): <span id="quality-val" style="color:var(--primary-color)">90%</span></label><input type="range" id="conv-quality" min="1" max="100" value="90" oninput="document.getElementById('quality-val').innerText=this.value+'%'" style="width:100%;accent-color:var(--primary-color);margin-top:8px;cursor:pointer"></div>
+</div>
+<label class="upload-area" id="converter-drop-area" style="border-color:#ff9800;background-color:#fff8e1">
+<span class="btn-upload" style="background-color:#f57c00"><span class="iconify" data-icon="mdi:image-multiple"></span> Выберите фото для Конвертации</span>
+<p style="color:#d84315">HEIC, HEIF, WEBP, PNG, JPG (Обработка офлайн)</p>
+<input type="file" id="converterInput" multiple accept=".heic,.heif,.webp,.png,.jpg,.jpeg">
+</label>
+<div class="file-list" id="convFileList"></div>
+<button id="download-all-btn" onclick="downloadAllZip()"><span class="iconify" data-icon="mdi:zip-box"></span> Скачать всё архивом (ZIP)</button>
+</div>
+
+<div id="layout-content" class="hidden">
+<div class="layout-wrapper">
+<div class="layout-settings">
+<h3 style="margin-top:0;text-align:left;color:#8e44ad"><span class="iconify" data-icon="mdi:ruler-square"></span> Параметры изделия</h3>
+<div style="margin-bottom:20px"><button class="preset-btn" onclick="setLayoutPreset(90,50)">Визитка (90×50)</button><button class="preset-btn" onclick="setLayoutPreset(85,55)">Евровизитка</button><button class="preset-btn" onclick="setLayoutPreset(148,105)">А6 / Флаер</button><button class="preset-btn" onclick="setLayoutPreset(210,99)">Еврофлаер</button></div>
+<div class="layout-row"><div><label>Ширина (мм):</label><input type="number" id="layout-w" class="calc-input" style="color:#8e44ad" value="90" oninput="updateLayoutPreview()"></div><div><label>Высота (мм):</label><input type="number" id="layout-h" class="calc-input" style="color:#8e44ad" value="50" oninput="updateLayoutPreview()"></div></div>
+<div class="layout-row"><div><label>Вылеты (мм):</label><input type="number" id="layout-bleed" class="calc-input" style="color:#8e44ad" value="2" step="0.5" oninput="updateLayoutPreview()"></div><div><label>Поля листа (мм):</label><input type="number" id="layout-margin" class="calc-input" style="color:#8e44ad" value="5" oninput="updateLayoutPreview()"></div></div>
+<div style="margin-bottom:20px"><label>Печатный лист:</label><div class="custom-select-wrapper" style="width:100%"><select id="layout-sheet" class="custom-select-source" onchange="updateLayoutPreview()"><option value="SRA3">SRA3 (320 × 450 мм)</option><option value="A3">A3 (297 × 420 мм)</option><option value="A4">A4 (210 × 297 мм)</option></select></div></div>
+<div class="checkbox-wrapper" style="margin-bottom:10px"><label><input type="checkbox" id="layout-cropmarks" checked onchange="updateLayoutPreview()"> <span>Метки реза (Crop marks)</span></label></div>
+<div class="checkbox-wrapper" style="margin-bottom:20px"><label><input type="checkbox" id="layout-fit" onchange="updateLayoutPreview()"> <span>Вписать (Без обрезки макета)</span></label></div>
+<hr style="border:none;border-top:1px solid #eee;margin:20px 0">
+<label class="upload-area" id="layout-drop-area" style="padding:20px;border-color:#8e44ad;background-color:#f9f0ff;margin-bottom:10px">
+<span class="btn-upload" style="background-color:#8e44ad;padding:8px 20px;font-size:14px"><span class="iconify" data-icon="mdi:image-plus"></span> Загрузить макеты</span>
+<p style="color:#666;margin-top:10px;font-size:12px">JPG, PNG, PDF. Страницы PDF добавятся как отдельные макеты.</p>
+<input type="file" id="layoutInput" multiple accept="image/*,.pdf,application/pdf">
+</label>
+<div id="layout-images-preview"></div>
+<button class="btn-clear hidden" id="layout-clear-btn" onclick="clearLayoutImages()" style="width:100%;justify-content:center"><span class="iconify" data-icon="mdi:delete"></span> Очистить макеты</button>
+<hr style="border:none;border-top:1px solid #eee;margin:20px 0">
+<button class="btn-purple" id="layout-export-btn" onclick="exportLayoutPDF()" disabled><span class="iconify" data-icon="mdi:file-pdf-box" style="font-size:20px"></span> Скачать PDF для печати</button>
+</div>
+<div class="layout-preview-pane"><div class="layout-stat-box"><div class="l-stat"><div>Изделий на листе</div><span id="layout-stat-qty">0</span></div><div class="l-stat"><div>Размер с вылетами</div><span style="font-size:18px" id="layout-stat-size">0×0</span></div></div><div id="layout-canvas-container"></div></div>
+</div>
+</div>
+
+<div class="summary-box" id="price-summary-box">
+<div class="card"><h3>Всего страниц</h3><div class="val" id="total-pages">0</div></div>
+<div class="card"><h3>Цветные</h3><div class="val" id="total-color">0</div></div>
+<div class="card price-card"><h3>Итоговая стоимость</h3><div class="val" id="total-price">0 ₽</div><div style="font-size:12px;color:#555;margin-top:5px">*Расчет по таблицам Kopirka</div></div>
+</div>
+
+<div id="auto-content">
+<h3 style="margin-top:30px"><span class="iconify" data-icon="mdi:printer"></span> Стандартная печать (А4, А3)</h3>
+<table><thead><tr><th rowspan="2" class="orange-head">Формат</th><th colspan="2">Цветные</th><th colspan="2">Ч/Б</th><th rowspan="2" class="orange-head">Стоимость за 1 лист</th><th rowspan="2" class="orange-head">Итого</th></tr><tr><th>меньше 50%</th><th>больше 50%</th><th>меньше 50%</th><th>больше 50%</th></tr></thead><tbody id="tableStandardBody"></tbody></table>
+<h3><span class="iconify" data-icon="mdi:printer-settings"></span> Широкоформатная печать (А2, А1, А0 и пог. м)</h3>
+<table><thead><tr><th rowspan="2" class="orange-head">Формат</th><th colspan="3">Цветные</th><th colspan="3">Ч/Б</th><th rowspan="2" class="orange-head">Стоимость за 1 лист / метр</th><th rowspan="2" class="orange-head">Итого</th></tr><tr><th>меньше 15%</th><th>15 - 50%</th><th>больше 50%</th><th>меньше 15%</th><th>15 - 50%</th><th>больше 50%</th></tr></thead><tbody id="tableWideBody"></tbody></table>
+<div class="page-map-box"><h3><span class="iconify" data-icon="mdi:map-legend"></span> Карта страниц</h3><div id="page-map-content">Нет данных</div></div>
+<button class="details-toggle" onclick="toggleDetails()"><span class="iconify" data-icon="mdi:console"></span> ПОДРОБНЫЙ ЛОГ</button>
+<div id="log-console"><div class="log-row" style="color:#fff;border-bottom:1px solid #fff"><span>№</span><span>Файл</span><span>Исх. Формат</span><span>Заливка</span></div><div id="log-content"></div></div>
+</div>
+
+<div id="manual-content" class="hidden">
+<h3 style="margin-top:30px">Ручной ввод (А4, А3)</h3>
+<table><thead><tr><th rowspan="2" class="orange-head">Формат</th><th colspan="2">Цветные</th><th colspan="2">Ч/Б</th><th rowspan="2" class="orange-head">Стоимость за 1 лист (ср.)</th><th rowspan="2" class="orange-head">Итого</th></tr><tr><th>меньше 50%</th><th>больше 50%</th><th>меньше 50%</th><th>больше 50%</th></tr></thead><tbody id="manual-table-std"></tbody></table>
+<h3>Ручной ввод (А2, А1, А0)</h3>
+<table><thead><tr><th rowspan="2" class="orange-head">Формат</th><th colspan="3">Цветные</th><th colspan="3">Ч/Б</th><th rowspan="2" class="orange-head">Стоимость за 1 лист (ср.)</th><th rowspan="2" class="orange-head">Итого</th></tr><tr><th>меньше 15%</th><th>15-50%</th><th>больше 50%</th><th>меньше 15%</th><th>15-50%</th><th>больше 50%</th></tr></thead><tbody id="manual-table-wide"></tbody></table>
+<h3>Ручной ввод (погонные метры)</h3>
+<table>
+    <thead>
+        <tr>
+            <th rowspan="2" class="orange-head">Формат</th>
+            <th colspan="3">Цветные, м</th>
+            <th colspan="3">Ч/Б, м</th>
+            <th rowspan="2" class="orange-head">Стоимость за 1 м (ср.)</th>
+            <th rowspan="2" class="orange-head">Итого</th>
+        </tr>
+        <tr>
+            <th>меньше 15%</th>
+            <th>15-50%</th>
+            <th>больше 50%</th>
+            <th>меньше 15%</th>
+            <th>15-50%</th>
+            <th>больше 50%</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+                <b>Пог. м</b><br>
+                <small>&gt; A0</small>
+            </td>
+            <td><input type="text" class="calc-input" id="m-roll-cl" placeholder="0.0"></td>
+            <td><input type="text" class="calc-input" id="m-roll-cm" placeholder="0.0"></td>
+            <td><input type="text" class="calc-input" id="m-roll-ch" placeholder="0.0"></td>
+            <td><input type="text" class="calc-input" id="m-roll-bl" placeholder="0.0"></td>
+            <td><input type="text" class="calc-input" id="m-roll-bm" placeholder="0.0"></td>
+            <td><input type="text" class="calc-input" id="m-roll-bh" placeholder="0.0"></td>
+            <td id="m-unit-roll">-</td>
+            <td id="m-price-roll">0 ₽</td>
+        </tr>
+    </tbody>
+</table>
+<div style="text-align:center;margin-top:20px"><button class="btn-clear" onclick="clearManual()"><span class="iconify" data-icon="mdi:delete-sweep"></span> Очистить таблицу</button></div>
+</div>
+</div>
+
+<script>
+function initCustomSelects(){document.querySelectorAll('.custom-select-source').forEach(select=>{if(select.nextElementSibling&&select.nextElementSibling.classList.contains('custom-select'))return;const wrapper=select.parentElement,custom=document.createElement('div'),trigger=document.createElement('div'),opts=document.createElement('div');custom.className='custom-select';trigger.className='custom-select__trigger';opts.className='custom-options';trigger.innerHTML=`<span>${select.options[select.selectedIndex].text}</span> <div class="arrow"></div>`;Array.from(select.options).forEach(o=>{const d=document.createElement('div');d.className='custom-option';if(o.selected)d.classList.add('selected');d.textContent=o.text;d.dataset.value=o.value;d.onclick=function(){trigger.querySelector('span').textContent=this.textContent;custom.querySelectorAll('.custom-option').forEach(x=>x.classList.remove('selected'));this.classList.add('selected');custom.classList.remove('open');select.value=this.dataset.value;select.dispatchEvent(new Event('change'))};opts.appendChild(d)});custom.append(trigger,opts);wrapper.appendChild(custom);trigger.onclick=()=>{document.querySelectorAll('.custom-select').forEach(x=>{if(x!==custom)x.classList.remove('open')});custom.classList.toggle('open')}});document.addEventListener('click',e=>{if(!e.target.closest('.custom-select'))document.querySelectorAll('.custom-select').forEach(x=>x.classList.remove('open'))})}
+function parseInput(v){if(!v)return 0;const c=v.toString().replace(/[^0-9+\-*/().]/g,'');try{const r=new Function('return '+c)();return Number.isFinite(r)?r:0}catch{return 0}}
+function isManualRollInput(el) {
+    return el && el.id && el.id.startsWith('m-roll-');
+}
+
+function normalizeManualInputValue(el, value) {
+    if (value < 0) value = 0;
+
+    if (isManualRollInput(el)) {
+        return (Math.round(value * 10) / 10).toFixed(1);
+    }
+
+    return value;
+}
+
+function initInputListeners() {
+    document.body.addEventListener('change', (e) => {
+        if (e.target.classList.contains('calc-input') && !e.target.id.startsWith('layout-')) {
+            let res = parseInput(e.target.value);
+
+            if (res < 0) res = 0;
+
+            e.target.value = normalizeManualInputValue(e.target, res);
+
+            recalculateManual();
+        }
+    });
+
+    document.body.addEventListener('wheel', (e) => {
+        if (e.target.classList.contains('calc-input') && document.activeElement === e.target) {
+            e.preventDefault();
+
+            let step = 1;
+
+            if (e.target.id.includes('layout-bleed')) {
+                step = 0.5;
+            }
+
+            if (isManualRollInput(e.target)) {
+                step = 0.1;
+            }
+
+            let current = parseInput(e.target.value) || 0;
+
+            if (e.deltaY < 0) {
+                current += step;
+            } else {
+                current -= step;
+            }
+
+            if (current < 0) current = 0;
+
+            e.target.value = normalizeManualInputValue(e.target, current);
+
+            if (e.target.id.startsWith('layout-')) {
+                updateLayoutPreview();
+            } else {
+                recalculateManual();
+            }
+        }
+    }, { passive: false });
+}
+function tiers(a){let r=[];for(let i=0;i<a.length;i+=2)r.push({l:a[i],p:a[i+1]});return r}
+const DB={"80":{"A4":{"BW":tiers([5,52,10,44,20,41,50,37,100,35,300,33,Infinity,28]),"Color":tiers([5,105,10,99,20,96,50,93,100,70,300,61,Infinity,55])},"A3":{"BW":tiers([5,88,10,77,20,72,50,66,100,61,300,55,Infinity,52]),"Color":tiers([5,170,10,160,20,154,50,149,100,121,300,110,Infinity,99])}},"120":{"A4":{"BW":tiers([5,62,10,54,20,51,50,47,100,45,300,43,Infinity,38]),"Color":tiers([5,126,10,119,20,117,50,100,100,91,300,87,Infinity,79])},"A3":{"BW":tiers([5,108,10,97,20,92,50,86,100,81,300,75,Infinity,72]),"Color":tiers([5,217,10,212,20,211,50,204,100,165,300,156,Infinity,142])}},"170":{"A4":{"BW":tiers([5,70,10,62,20,59,50,55,100,53,300,51,Infinity,46]),"Color":tiers([5,128,10,122,20,119,50,106,100,93,300,91,Infinity,87])},"A3":{"BW":tiers([5,124,10,113,20,108,50,102,100,97,300,91,Infinity,88]),"Color":tiers([5,224,10,220,20,219,50,208,100,172,300,156,Infinity,149])}},"200":{"A4":{"BW":tiers([5,72,10,64,20,61,50,57,100,55,300,53,Infinity,48]),"Color":tiers([5,138,10,131,20,128,50,117,100,106,300,99,Infinity,93])},"A3":{"BW":tiers([5,128,10,117,20,112,50,100,100,101,300,95,Infinity,92]),"Color":tiers([5,238,10,236,20,235,50,226,100,196,300,180,Infinity,172])}},"300":{"A4":{"BW":tiers([5,84,10,76,20,73,50,69,100,67,300,65,Infinity,60]),"Color":tiers([5,168,10,161,20,160,50,149,100,131,300,126,Infinity,122])},"A3":{"BW":tiers([5,152,10,141,20,136,50,130,100,125,300,119,Infinity,116]),"Color":tiers([5,319,10,313,20,306,50,276,100,250,300,242,Infinity,226])}}};
+const WIDE_DB={"A2":{"BW":tiers([1,280,5,225,10,200,20,145,50,125,Infinity,105]),"ColorLow":tiers([1,280,5,255,10,230,20,200,50,185,100,180,Infinity,150]),"ColorMed":tiers([1,600,5,570,10,555,20,540,50,515,100,485,Infinity,435]),"Poster":tiers([9,2280,29,1595,49,970,Infinity,605])},"A1":{"BW":tiers([1,375,5,305,10,265,20,240,50,230,Infinity,215]),"ColorLow":tiers([1,405,5,385,10,360,20,335,50,285,100,255,Infinity,225]),"ColorMed":tiers([1,915,5,870,10,835,20,810,50,770,100,745,Infinity,675]),"Poster":tiers([9,3340,29,2860,49,2090,Infinity,860])},"A0":{"BW":tiers([1,655,5,525,10,480,20,440,50,390,Infinity,350]),"ColorLow":tiers([1,655,5,625,10,600,20,565,50,530,100,475,Infinity,350]),"ColorMed":tiers([1,1695,5,1640,10,1600,20,1575,50,1530,100,1490,Infinity,1380]),"Poster":tiers([9,6780,29,4840,49,3630,Infinity,1540])}};
+const SELF_ADHESIVE_DB = {
+    "A4": 110,
+    "A3": 220
+};
+const ROLL_DB={"BW":tiers([1,675,5,595,10,545,20,515,50,480,Infinity,450]),"ColorLow":tiers([1,675,5,655,10,625,20,585,50,540,100,490,Infinity,405]),"ColorMed":tiers([1,2145,5,2090,10,2055,20,2035,50,1965,100,1935,Infinity,1880]),"Poster":tiers([9,8700,29,6820,49,5940,Infinity,3850])};
+let allPagesData=[],currentMode='real',convertedFiles=[],pdfCache=new Map();
+const PDF_LARGE=10*1024*1024,A0_LONG_MM=1189;
+document.addEventListener('DOMContentLoaded',()=>{initCustomSelects();initInputListeners();initManualTables();initDnD();updateLayoutPreview()});
+function initManualTables(){const s=document.getElementById('manual-table-std'),w=document.getElementById('manual-table-wide');['A4','A3'].forEach(f=>{let l=f.toLowerCase();s.innerHTML+=`<tr><td><b>${f}</b></td><td><input class="calc-input" id="m-${l}-cl"></td><td><input class="calc-input" id="m-${l}-ch"></td><td><input class="calc-input" id="m-${l}-bl"></td><td><input class="calc-input" id="m-${l}-bh"></td><td id="m-unit-${l}">-</td><td id="m-price-${l}">0 ₽</td></tr>`});['A2','A1','A0'].forEach(f=>{w.innerHTML+=`<tr><td><b>${f}</b></td><td><input class="calc-input" id="m-${f}-cl"></td><td><input class="calc-input" id="m-${f}-cm"></td><td><input class="calc-input" id="m-${f}-ch"></td><td><input class="calc-input" id="m-${f}-bl"></td><td><input class="calc-input" id="m-${f}-bm"></td><td><input class="calc-input" id="m-${f}-bh"></td><td id="m-unit-${f}">-</td><td id="m-price-${f}">0 ₽</td></tr>`})}
+function bindDrop(area,input,cb){['dragenter','dragover','dragleave','drop'].forEach(n=>area.addEventListener(n,e=>{e.preventDefault();e.stopPropagation()}));['dragenter','dragover'].forEach(n=>area.addEventListener(n,()=>area.classList.add('drag-over')));['dragleave','drop'].forEach(n=>area.addEventListener(n,()=>area.classList.remove('drag-over')));area.addEventListener('drop',e=>cb(e.dataTransfer.files));input.addEventListener('change',e=>cb(e.target.files))}
+function initDnD(){bindDrop(dropArea=document.getElementById('drop-area'),document.getElementById('fileInput'),processFiles);bindDrop(document.getElementById('converter-drop-area'),document.getElementById('converterInput'),handleConvFiles);bindDrop(document.getElementById('layout-drop-area'),document.getElementById('layoutInput'),handleLayoutFiles)}
+function setMode(m){currentMode=m;document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.getElementById('tab-'+m).classList.add('active');let man=m==='manual',conv=m==='converter',lay=m==='layout';document.getElementById('auto-options').classList.toggle('hidden',man||conv||lay);document.getElementById('manual-options').classList.toggle('hidden',!man);document.getElementById('calculator-upload-block').classList.toggle('hidden',man||conv||lay);document.getElementById('auto-content').classList.toggle('hidden',man||conv||lay);document.getElementById('manual-content').classList.toggle('hidden',!man);document.getElementById('converter-content').classList.toggle('hidden',!conv);document.getElementById('layout-content').classList.toggle('hidden',!lay);document.getElementById('price-summary-box').classList.toggle('hidden',conv||lay);if(!man&&!conv&&!lay){document.getElementById('opt-all_one').style.display=m==='all_one'?'block':'none';document.getElementById('opt-hybrid').style.display=m==='hybrid'?'block':'none';recalculate()}else if(man)recalculateManual();else if(lay)updateLayoutPreview()}
+function isPdf(f){return f.type==='application/pdf'||f.name.toLowerCase().endsWith('.pdf')}
+function wait(){return new Promise(r=>setTimeout(r,0))}
+async function processFiles(list){const files=Array.from(list);if(!files.length)return;allPagesData=[];document.getElementById('progressContainer').style.display='block';document.getElementById('log-content').innerHTML='';let start=0;for(let i=0;i<files.length;i++){let f=files[i];try{if(isPdf(f))await processPDF(f,start,i,files.length);else if(f.type.startsWith('image/'))await processImage(f,start);else allPagesData.push({file:f.name,origFmt:'A4',isColor:true,coverage:15,globalPageNum:start+1,linearMeters:0})}catch(e){console.error(e)}start=allPagesData.length;document.getElementById('progressBar').style.width=((i+1)/files.length*100)+'%';renderPageMap();recalculate();await wait()}document.getElementById('status').innerText='Готово!';setTimeout(()=>document.getElementById('progressContainer').style.display='none',2000);document.getElementById('fileInput').value=''}
+async function processPDF(file,startIdx,fileIdx,totalFiles){let key=file.name+'|'+file.size+'|'+file.lastModified;if(pdfCache.has(key)){pdfCache.get(key).forEach((p,i)=>{let d={...p,file:file.name,globalPageNum:startIdx+i+1};allPagesData.push(d);addLog(d,'кэш')});return}const pdf=await pdfjsLib.getDocument(await file.arrayBuffer()).promise,fast=document.getElementById('chk-fast-pdf').checked||file.size>PDF_LARGE,scaleBase=fast?.35:1,cache=[];for(let i=1;i<=pdf.numPages;i++){document.getElementById('status').innerText=`PDF: ${file.name} — страница ${i}/${pdf.numPages}${fast?' · быстрый режим':''}`;document.getElementById('progressBar').style.width=(((fileIdx+(i/pdf.numPages))/totalFiles)*100)+'%';const page=await pdf.getPage(i),vp0=page.getViewport({scale:1}),fmt=getPageFormat(vp0.width,vp0.height);let vp=page.getViewport({scale:scaleBase}),max=1400;if(Math.max(vp.width,vp.height)>max){let k=max/Math.max(vp.width,vp.height);vp=page.getViewport({scale:scaleBase*k})}const c=document.createElement('canvas'),ctx=c.getContext('2d',{willReadFrequently:true});c.width=Math.floor(vp.width);c.height=Math.floor(vp.height);await page.render({canvasContext:ctx,viewport:vp}).promise;let an=analyzePixelData(ctx,c.width,c.height);let d={file:file.name,origFmt:fmt.name,isColor:an.isColor,coverage:an.coverage,globalPageNum:startIdx+i,linearMeters:fmt.linearMeters||0,origWmm:fmt.wMm,origHmm:fmt.hMm};allPagesData.push(d);cache.push({...d,file:undefined,globalPageNum:undefined});addLog(d);c.width=c.height=0;await wait()}pdfCache.set(key,cache)}
+function addLog(d,note=''){let r=document.createElement('div');r.className='log-row';r.innerHTML=`<span>${d.globalPageNum}</span><span>${d.file.substring(0,20)}</span><span>${d.origFmt}${d.linearMeters?` (${d.linearMeters.toFixed(1)} п.м)`:''}</span><span>${d.coverage.toFixed(1)}% ${note}</span>`;document.getElementById('log-content').appendChild(r)}
+async function processImage(file,startIdx){return new Promise(res=>{let img=new Image();img.onload=()=>{let c=document.createElement('canvas'),ctx=c.getContext('2d',{willReadFrequently:true}),m=1600,k=Math.min(1,m/Math.max(img.width,img.height));c.width=Math.floor(img.width*k);c.height=Math.floor(img.height*k);ctx.drawImage(img,0,0,c.width,c.height);let an=analyzePixelData(ctx,c.width,c.height);let d={file:file.name,origFmt:'Другой',isColor:an.isColor,coverage:an.coverage,globalPageNum:startIdx+1,linearMeters:0};allPagesData.push(d);addLog(d);URL.revokeObjectURL(img.src);res()};img.src=URL.createObjectURL(file)})}
+function analyzePixelData(ctx,w,h){const d=ctx.getImageData(0,0,w,h).data;let pc=0,pv=0,t=0,step=Math.max(1,Math.floor(Math.sqrt((w*h)/900000)));for(let y=0;y<h;y+=step)for(let x=0;x<w;x+=step){let i=(y*w+x)*4,r=d[i],g=d[i+1],b=d[i+2];if(Math.max(Math.abs(r-g),Math.abs(r-b),Math.abs(g-b))>10)pc++;if(r<250||g<250||b<250)pv++;t++}return{isColor:t?pc/t>.0001:false,coverage:t?pv/t*100:0}}
+function ceilT(v){return Math.ceil(v*10)/10}
+function getPageFormat(wPt,hPt){const wMm=wPt/72*25.4,hMm=hPt/72*25.4,s=Math.min(wMm,hMm),l=Math.max(wMm,hMm);if(l>A0_LONG_MM)return{name:'Пог. м',wMm,hMm,linearMeters:ceilT(l/1000)};let tol=15,fmts=[['A5',148,210],['A4',210,297],['A3',297,420],['A2',420,594],['A1',594,841],['A0',841,1189]];for(let f of fmts)if(l<=f[2]+tol&&s<=f[1]+tol)return{name:f[0],wMm,hMm,linearMeters:0};return{name:'Другой',wMm,hMm,linearMeters:0}}
+function getPrice(list,q){for(let t of list)if(q<=t.l)return t.p;return 0}
+function emptyStat(){return{cL:0,cH:0,bL:0,bM:0,bH:0,wCL:0,wCM:0,wCH:0,rCL:0,rCM:0,rCH:0,rBL:0,rBM:0,rBH:0,pages:0}}
+function calcRollPrice(s){let sum=0,bw=s.rBL+s.rBM+s.rBH;if(bw>0)sum+=bw*getPrice(ROLL_DB.BW,bw);if(s.rCL>0)sum+=s.rCL*getPrice(ROLL_DB.ColorLow,s.rCL);if(s.rCM>0)sum+=s.rCM*getPrice(ROLL_DB.ColorMed,s.rCM);if(s.rCH>0)sum+=s.rCH*getPrice(ROLL_DB.Poster,s.rCH);return sum}
+function fm(v){return v>0?v.toFixed(1)+' м':'0'}
+function isSelfAdhesiveAuto() {
+    const el = document.getElementById('chk-self-adhesive');
+    return el ? el.checked : false;
+}
+
+function isSelfAdhesiveManual() {
+    const el = document.getElementById('chk-self-adhesive-manual');
+    return el ? el.checked : false;
+}
+
+function getSelfAdhesiveSurcharge(fmt, qty) {
+    if (!SELF_ADHESIVE_DB[fmt] || qty <= 0) return 0;
+    return qty * SELF_ADHESIVE_DB[fmt];
+}
+function recalculate() {
+    if (currentMode === 'manual' || currentMode === 'converter' || currentMode === 'layout') return;
+
+    const targetAll = document.getElementById('sel-target-all').value;
+    const targetBig = document.getElementById('sel-target-big').value;
+
+    const selfAdhesive = isSelfAdhesiveAuto();
+
+    // Для самоклейки печать всегда считается как 80 г/м²
+    const paperWeight = selfAdhesive ? '80' : document.getElementById('sel-paper').value;
+
+    const forceBW = document.getElementById('chk-force-bw').checked;
+
+    const processed = allPagesData.map(p => {
+        let prn = p.origFmt;
+
+        if (currentMode === 'all_one') {
+            prn = targetAll;
+        } else if (currentMode === 'hybrid') {
+            if (['A3', 'A2', 'A1', 'A0', 'Другой', 'Пог. м'].includes(p.origFmt)) {
+                prn = targetBig;
+            } else {
+                prn = 'A4';
+            }
+        } else {
+            if (p.origFmt === 'Пог. м') {
+                prn = 'ROLL';
+            }
+        }
+
+        if (prn === 'A5' || prn === 'Другой') prn = 'A4';
+
+        return {
+            ...p,
+            printFmt: prn,
+            effectiveColor: forceBW ? false : p.isColor
+        };
+    });
+
+    let stats = {};
+    let tPages = 0;
+    let tColor = 0;
+
+    processed.forEach(p => {
+        if (!stats[p.printFmt]) stats[p.printFmt] = emptyStat();
+
+        const s = stats[p.printFmt];
+
+        s.pages++;
+        tPages++;
+
+        // Погонные метры
+        if (p.printFmt === 'ROLL') {
+            const meters = p.linearMeters || 0.1;
+
+            if (p.effectiveColor) {
+                tColor++;
+
+                if (p.coverage > 50) {
+                    s.rCH += meters;
+                } else if (p.coverage >= 15) {
+                    s.rCM += meters;
+                } else {
+                    s.rCL += meters;
+                }
+            } else {
+                if (p.coverage > 50) {
+                    s.rBH += meters;
+                } else if (p.coverage >= 15) {
+                    s.rBM += meters;
+                } else {
+                    s.rBL += meters;
+                }
+            }
+
+            return;
+        }
+
+        // Листовые форматы
+        if (p.effectiveColor) {
+            tColor++;
+
+            if (p.coverage > 50) {
+                s.cH++;
+                s.wCH++;
+            } else if (p.coverage >= 15) {
+                s.cL++;
+                s.wCM++;
+            } else {
+                s.cL++;
+                s.wCL++;
+            }
+        } else {
+            if (p.coverage > 50) {
+                s.bH++;
+            } else if (p.coverage >= 15) {
+                s.bM++;
+            } else {
+                s.bL++;
+            }
+        }
+    });
+
+    let sum = 0;
+
+    ['A4', 'A3'].forEach(fmt => {
+        if (!stats[fmt]) return;
+
+        const s = stats[fmt];
+        const pTable = DB[paperWeight][fmt];
+
+        const bwLow = s.bL + s.bM;
+        const bwHigh = s.bH;
+        const tBW = bwLow + bwHigh;
+
+        let rowSum = 0;
+
+        if (tBW > 0) {
+            const p = getPrice(pTable.BW, tBW);
+            rowSum += (tBW * p) + (bwHigh * p);
+        }
+
+        const tC = s.cL + s.cH;
+
+        if (tC > 0) {
+            const p = getPrice(pTable.Color, tC);
+            rowSum += (tC * p) + (s.cH * p);
+        }
+
+        const tRow = s.cL + s.cH + bwLow + bwHigh;
+
+        // Доплата за самоклейку
+        if (selfAdhesive && SELF_ADHESIVE_DB[fmt]) {
+            rowSum += getSelfAdhesiveSurcharge(fmt, tRow);
+        }
+
+        sum += rowSum;
+    });
+
+    ['A2', 'A1', 'A0'].forEach(fmt => {
+        if (!stats[fmt]) return;
+
+        const s = stats[fmt];
+        const wTable = WIDE_DB[fmt];
+
+        const bw = s.bL + s.bM + s.bH;
+
+        if (bw > 0) {
+            sum += bw * getPrice(wTable.BW, bw);
+        }
+
+        if (s.wCL > 0) {
+            sum += s.wCL * getPrice(wTable.ColorLow, s.wCL);
+        }
+
+        if (s.wCM > 0) {
+            sum += s.wCM * getPrice(wTable.ColorMed, s.wCM);
+        }
+
+        if (s.wCH > 0) {
+            sum += s.wCH * getPrice(wTable.Poster, s.wCH);
+        }
+    });
+
+    if (stats.ROLL) {
+        sum += calcRollPrice(stats.ROLL);
+    }
+
+    document.getElementById('total-pages').innerText = tPages;
+    document.getElementById('total-color').innerText = tColor;
+    document.getElementById('total-price').innerText = Math.round(sum).toLocaleString() + ' ₽';
+
+    renderTable(stats, paperWeight, selfAdhesive);
+}
+function renderTable(stats, paperWeight, selfAdhesive = false) {
+    const stdBody = document.getElementById('tableStandardBody');
+    const wideBody = document.getElementById('tableWideBody');
+
+    stdBody.innerHTML = '';
+    wideBody.innerHTML = '';
+
+    const getCls = v => v > 0 ? 'cell-active' : '';
+
+    ['A4', 'A3'].forEach(fmt => {
+        if (!stats[fmt]) return;
+
+        const s = stats[fmt];
+        const pTable = DB[paperWeight][fmt];
+
+        let rowSum = 0;
+
+        const bwLow = s.bL + s.bM;
+        const bwHigh = s.bH;
+        const tBW = bwLow + bwHigh;
+
+        if (tBW > 0) {
+            const p = getPrice(pTable.BW, tBW);
+            rowSum += (tBW * p) + (bwHigh * p);
+        }
+
+        const tC = s.cL + s.cH;
+
+        if (tC > 0) {
+            const p = getPrice(pTable.Color, tC);
+            rowSum += (tC * p) + (s.cH * p);
+        }
+
+        const tRow = s.cL + s.cH + bwLow + bwHigh;
+
+        if (selfAdhesive && SELF_ADHESIVE_DB[fmt]) {
+            rowSum += getSelfAdhesiveSurcharge(fmt, tRow);
+        }
+
+        const avgPrice = tRow > 0 ? (rowSum / tRow).toFixed(1) : 0;
+
+        const materialLabel = selfAdhesive && SELF_ADHESIVE_DB[fmt]
+            ? `<br><small>+ самоклейка</small>`
+            : '';
+
+        stdBody.innerHTML += `
+            <tr>
+                <td><b>${fmt}</b>${materialLabel}</td>
+                <td class="${getCls(s.cL)}">${s.cL}</td>
+                <td class="${getCls(s.cH)}">${s.cH}</td>
+                <td class="${getCls(bwLow)}">${bwLow}</td>
+                <td class="${getCls(bwHigh)}">${bwHigh}</td>
+                <td><b>${avgPrice} ₽</b></td>
+                <td><b>${tRow}</b></td>
+            </tr>
+        `;
+    });
+
+    ['A2', 'A1', 'A0'].forEach(fmt => {
+        if (!stats[fmt]) return;
+
+        const s = stats[fmt];
+        const wTable = WIDE_DB[fmt];
+
+        let rowSum = 0;
+
+        const bw = s.bL + s.bM + s.bH;
+
+        if (bw > 0) {
+            rowSum += bw * getPrice(wTable.BW, bw);
+        }
+
+        if (s.wCL > 0) {
+            rowSum += s.wCL * getPrice(wTable.ColorLow, s.wCL);
+        }
+
+        if (s.wCM > 0) {
+            rowSum += s.wCM * getPrice(wTable.ColorMed, s.wCM);
+        }
+
+        if (s.wCH > 0) {
+            rowSum += s.wCH * getPrice(wTable.Poster, s.wCH);
+        }
+
+        const tRow = s.wCL + s.wCM + s.wCH + s.bL + s.bM + s.bH;
+        const avgPrice = tRow > 0 ? (rowSum / tRow).toFixed(1) : 0;
+
+        wideBody.innerHTML += `
+            <tr>
+                <td><b>${fmt}</b></td>
+                <td class="${getCls(s.wCL)}">${s.wCL}</td>
+                <td class="${getCls(s.wCM)}">${s.wCM}</td>
+                <td class="${getCls(s.wCH)}">${s.wCH}</td>
+                <td class="${getCls(s.bL)}">${s.bL}</td>
+                <td class="${getCls(s.bM)}">${s.bM}</td>
+                <td class="${getCls(s.bH)}">${s.bH}</td>
+                <td><b>${avgPrice} ₽</b></td>
+                <td><b>${tRow}</b></td>
+            </tr>
+        `;
+    });
+
+    if (stats.ROLL) {
+        const s = stats.ROLL;
+
+        const rowSum = calcRollPrice(s);
+
+        const colorMeters = s.rCL + s.rCM + s.rCH;
+        const bwMeters = s.rBL + s.rBM + s.rBH;
+        const totalMeters = colorMeters + bwMeters;
+
+        const avgPrice = totalMeters > 0 ? (rowSum / totalMeters).toFixed(1) : 0;
+
+        wideBody.innerHTML += `
+            <tr>
+                <td><b>Пог. м<br><small>&gt; A0</small></b></td>
+                <td class="${getCls(s.rCL)}">${formatMeters ? formatMeters(s.rCL) : fm(s.rCL)}</td>
+                <td class="${getCls(s.rCM)}">${formatMeters ? formatMeters(s.rCM) : fm(s.rCM)}</td>
+                <td class="${getCls(s.rCH)}">${formatMeters ? formatMeters(s.rCH) : fm(s.rCH)}</td>
+                <td class="${getCls(s.rBL)}">${formatMeters ? formatMeters(s.rBL) : fm(s.rBL)}</td>
+                <td class="${getCls(s.rBM)}">${formatMeters ? formatMeters(s.rBM) : fm(s.rBM)}</td>
+                <td class="${getCls(s.rBH)}">${formatMeters ? formatMeters(s.rBH) : fm(s.rBH)}</td>
+                <td><b>${avgPrice} ₽/м</b></td>
+                <td>
+                    <b>${totalMeters.toFixed(1)} м</b><br>
+                    <small>${s.pages} стр.</small>
+                </td>
+            </tr>
+        `;
+    }
+}
+function recalculateManual() {
+    let sum = 0;
+    let tPages = 0;
+    let tColor = 0;
+
+    let rollMetersTotal = 0;
+    let rollColorMeters = 0;
+
+    const selfAdhesive = isSelfAdhesiveManual();
+
+    // Для самоклейки печать A4/A3 всегда считается как 80 г/м²
+    const paperWeight = selfAdhesive ? '80' : document.getElementById('sel-paper-manual').value;
+
+    const getVal = (id) => {
+        const el = document.getElementById(id);
+        return el ? parseInput(el.value) : 0;
+    };
+
+    ['A4', 'A3'].forEach(fmt => {
+        const pTable = DB[paperWeight][fmt];
+        const f = fmt.toLowerCase();
+
+        const cL = getVal(`m-${f}-cl`);
+        const cH = getVal(`m-${f}-ch`);
+        const bL = getVal(`m-${f}-bl`);
+        const bH = getVal(`m-${f}-bh`);
+
+        let rowSum = 0;
+
+        const tBW = bL + bH;
+
+        if (tBW > 0) {
+            const p = getPrice(pTable.BW, tBW);
+            rowSum += (tBW * p) + (bH * p);
+        }
+
+        const tC = cL + cH;
+
+        if (tC > 0) {
+            const p = getPrice(pTable.Color, tC);
+            rowSum += (tC * p) + (cH * p);
+        }
+
+        const tRow = cL + cH + bL + bH;
+
+        // Доплата за самоклейку
+        if (selfAdhesive && SELF_ADHESIVE_DB[fmt]) {
+            rowSum += getSelfAdhesiveSurcharge(fmt, tRow);
+        }
+
+        sum += rowSum;
+        tPages += tRow;
+        tColor += cL + cH;
+
+        const avg = tRow > 0 ? (rowSum / tRow).toFixed(1) : "-";
+
+        document.getElementById(`m-unit-${f}`).innerText = avg + (tRow > 0 ? ' ₽' : '');
+        document.getElementById(`m-price-${f}`).innerText = Math.round(rowSum).toLocaleString() + ' ₽';
+    });
+
+    ['A2', 'A1', 'A0'].forEach(fmt => {
+        const wTable = WIDE_DB[fmt];
+        const f = fmt;
+
+        const cL = getVal(`m-${f}-cl`);
+        const cM = getVal(`m-${f}-cm`);
+        const cH = getVal(`m-${f}-ch`);
+
+        const bL = getVal(`m-${f}-bl`);
+        const bM = getVal(`m-${f}-bm`);
+        const bH = getVal(`m-${f}-bh`);
+
+        const bwTotal = bL + bM + bH;
+
+        let rowSum = 0;
+
+        if (bwTotal > 0) {
+            rowSum += bwTotal * getPrice(wTable.BW, bwTotal);
+        }
+
+        if (cL > 0) {
+            rowSum += cL * getPrice(wTable.ColorLow, cL);
+        }
+
+        if (cM > 0) {
+            rowSum += cM * getPrice(wTable.ColorMed, cM);
+        }
+
+        if (cH > 0) {
+            rowSum += cH * getPrice(wTable.Poster, cH);
+        }
+
+        sum += rowSum;
+        tPages += cL + cM + cH + bwTotal;
+        tColor += cL + cM + cH;
+
+        const tRow = cL + cM + cH + bwTotal;
+        const avg = tRow > 0 ? (rowSum / tRow).toFixed(1) : "-";
+
+        document.getElementById(`m-unit-${f}`).innerText = avg + (tRow > 0 ? ' ₽' : '');
+        document.getElementById(`m-price-${f}`).innerText = Math.round(rowSum).toLocaleString() + ' ₽';
+    });
+
+    // === РУЧНОЙ РАСЧЕТ ПОГОННЫХ МЕТРОВ ===
+    const rCL = getVal('m-roll-cl');
+    const rCM = getVal('m-roll-cm');
+    const rCH = getVal('m-roll-ch');
+
+    const rBL = getVal('m-roll-bl');
+    const rBM = getVal('m-roll-bm');
+    const rBH = getVal('m-roll-bh');
+
+    const rollStat = {
+        rCL,
+        rCM,
+        rCH,
+        rBL,
+        rBM,
+        rBH,
+        pages: 0
+    };
+
+    const rollSum = calcRollPrice(rollStat);
+
+    const rollBW = rBL + rBM + rBH;
+    const rollColor = rCL + rCM + rCH;
+    const rollTotal = rollBW + rollColor;
+
+    rollMetersTotal = rollTotal;
+    rollColorMeters = rollColor;
+
+    sum += rollSum;
+
+    const rollAvg = rollTotal > 0 ? (rollSum / rollTotal).toFixed(1) : "-";
+
+    const unitRoll = document.getElementById('m-unit-roll');
+    const priceRoll = document.getElementById('m-price-roll');
+
+    if (unitRoll) {
+        unitRoll.innerText = rollAvg + (rollTotal > 0 ? ' ₽/м' : '');
+    }
+
+    if (priceRoll) {
+        priceRoll.innerText = Math.round(rollSum).toLocaleString() + ' ₽';
+    }
+
+    const pagesText = rollMetersTotal > 0
+        ? `${tPages} / ${rollMetersTotal.toFixed(1)} м`
+        : tPages;
+
+    const colorText = rollColorMeters > 0
+        ? `${tColor} / ${rollColorMeters.toFixed(1)} м`
+        : tColor;
+
+    document.getElementById('total-pages').innerText = pagesText;
+    document.getElementById('total-color').innerText = colorText;
+    document.getElementById('total-price').innerText = Math.round(sum).toLocaleString() + ' ₽';
+}
+function clearManual(){document.querySelectorAll('#manual-content .calc-input').forEach(i=>i.value='');recalculateManual()}
+function renderPageMap(){let g={};allPagesData.forEach(p=>{let k=p.linearMeters?`${p.origFmt} (${p.linearMeters.toFixed(1)} п.м)`:p.origFmt;if(!g[k])g[k]=[];g[k].push(p.globalPageNum)});let h='';for(let k in g)h+=`<div class="page-map-row"><span class="page-map-fmt">${k}:</span> ${ranges(g[k])}</div>`;document.getElementById('page-map-content').innerHTML=h||'Нет данных'}
+function ranges(a){if(!a.length)return'';a.sort((x,y)=>x-y);let r=[],s=a[0],p=a[0];for(let i=1;i<a.length;i++){if(a[i]===p+1)p=a[i];else{r.push(s===p?s:s+'-'+p);s=p=a[i]}}r.push(s===p?s:s+'-'+p);return r.join(', ')}
+function toggleDetails(){let e=document.getElementById('log-console');e.style.display=e.style.display==='block'?'none':'block'}
+
+/* converter */
+const convList=document.getElementById('convFileList'),dlBtn=document.getElementById('download-all-btn');
+function toggleQualitySlider(){let png=document.getElementById('conv-format').value==='png';document.getElementById('quality-container').style.opacity=png?.4:1;document.getElementById('conv-quality').disabled=png}
+const _crc32Table=new Uint32Array(256);for(let i=0;i<256;i++){let c=i;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);_crc32Table[i]=c}
+function crc32(d){let c=0xFFFFFFFF;for(let i=0;i<d.length;i++)c=_crc32Table[(c^d[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0}
+function applyDPItoBlob(blob,dpi){return new Promise(res=>{let r=new FileReader();r.onload=e=>{let b=new Uint8Array(e.target.result);if(blob.type==='image/jpeg'){for(let i=0;i<b.length-18;i++)if(b[i]===255&&b[i+1]===224&&b[i+4]===74&&b[i+5]===70){b[i+11]=1;b[i+12]=Math.floor(dpi/256);b[i+13]=dpi%256;b[i+14]=Math.floor(dpi/256);b[i+15]=dpi%256;break}res(new Blob([b],{type:blob.type}))}else res(blob)};r.readAsArrayBuffer(blob)})}
+async function handleConvFiles(files){for(let i=0;i<files.length;i++){createConvRow(files[i],i);await processConvFile(files[i])}document.getElementById('converterInput').value=''}
+function createConvRow(file,i){let id=`cfile-${i}-${Date.now()}`,d=document.createElement('div');d.className='file-item';d.id=id;d.innerHTML=`<div class="file-name" title="${file.name}"><span class="iconify" data-icon="mdi:file-image"></span> ${file.name}</div><div class="file-status"><span class="loader"></span> Обработка...</div><div class="file-action"><a href="#" class="btn-download" download><span class="iconify" data-icon="mdi:download"></span> Скачать</a></div>`;convList.appendChild(d);file.uiId=id}
+async function processConvFile(file){let row=document.getElementById(file.uiId),st=row.querySelector('.file-status'),btn=row.querySelector('.btn-download'),fmt=document.getElementById('conv-format').value,q=parseInt(document.getElementById('conv-quality').value)/100,dpi=parseInt(document.getElementById('conv-dpi').value)||300,ext=fmt==='jpeg'?'.jpg':'.png';try{let blob,name=file.name.split('.').slice(0,-1).join('.')+ext;if(file.name.toLowerCase().match(/\.(heic|heif)$/)){blob=await heic2any({blob:file,toType:'image/'+fmt,quality:q});if(Array.isArray(blob))blob=blob[0]}else blob=await convertImageFormat(file,fmt,q);blob=await applyDPItoBlob(blob,dpi);let url=URL.createObjectURL(blob);st.innerHTML='<span style="color:green;font-weight:bold">Готово</span>';btn.href=url;btn.download=name;convertedFiles.push({name,blob});if(convertedFiles.length>1){dlBtn.style.display='block';dlBtn.innerText=`Скачать всё архивом (${convertedFiles.length})`}}catch(e){console.error(e);st.innerHTML='<span style="color:red">Ошибка</span>'}}
+function convertImageFormat(file,fmt,q){return new Promise((res,rej)=>{let img=new Image();img.onload=()=>{let c=document.createElement('canvas'),x=c.getContext('2d');c.width=img.width;c.height=img.height;if(fmt==='jpeg'){x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height)}x.drawImage(img,0,0);c.toBlob(b=>res(b),'image/'+fmt,q)};img.onerror=rej;img.src=URL.createObjectURL(file)})}
+async function downloadAllZip(){let z=new JSZip();convertedFiles.forEach(f=>z.file(f.name,f.blob));dlBtn.innerHTML='<span class="iconify" data-icon="mdi:loading" data-spin="true"></span> Архивация...';saveAs(await z.generateAsync({type:'blob'}),'images_converted.zip');dlBtn.innerHTML=`<span class="iconify" data-icon="mdi:zip-box"></span> Скачать всё архивом (${convertedFiles.length})`}
+
+/* layout */
+let layoutImages=[],currentLayoutConf=null;const LAYOUT_EXPORT_DPI=600,paperFormats={SRA3:{w:320,h:450},A3:{w:297,h:420},A4:{w:210,h:297}};
+function setLayoutPreset(w,h){document.getElementById('layout-w').value=w;document.getElementById('layout-h').value=h;updateLayoutPreview()}
+async function handleLayoutFiles(files){if(!files.length)return;document.getElementById('layout-clear-btn').classList.remove('hidden');let box=document.getElementById('layout-images-preview');for(let f of files){if(isPdf(f))await addPdfLayout(f,box);else if(f.type.startsWith('image/'))await addImgLayout(f,box)}document.getElementById('layoutInput').value='';updateLayoutPreview()}
+async function addImgLayout(file,box){let url=URL.createObjectURL(file),img=new Image();await new Promise((r,j)=>{img.onload=r;img.onerror=j;img.src=url});let a={type:'image',name:file.name,img,previewSrc:url};layoutImages.push(a);let t=document.createElement('img');t.className='layout-thumb';t.src=url;t.title=file.name;box.appendChild(t)}
+async function addPdfLayout(file,box){let pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;for(let n=1;n<=pdf.numPages;n++){let page=await pdf.getPage(n),src=await pdfPreview(page),a={type:'pdf',name:`${file.name} · стр. ${n}`,pdf,pageNumber:n,previewSrc:src};layoutImages.push(a);let t=document.createElement('img');t.className='layout-thumb';t.src=src;t.title=a.name;box.appendChild(t)}}
+async function pdfPreview(page){let v=page.getViewport({scale:1}),s=220/Math.max(v.width,v.height),vp=page.getViewport({scale:s}),c=document.createElement('canvas'),x=c.getContext('2d');c.width=Math.floor(vp.width);c.height=Math.floor(vp.height);x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);await page.render({canvasContext:x,viewport:vp}).promise;return c.toDataURL('image/jpeg',.85)}
+function clearLayoutImages(){layoutImages.forEach(a=>{if(a.type==='image'&&a.previewSrc.startsWith('blob:'))URL.revokeObjectURL(a.previewSrc)});layoutImages=[];document.getElementById('layout-images-preview').innerHTML='';document.getElementById('layout-clear-btn').classList.add('hidden');updateLayoutPreview()}
+function updateLayoutPreview(){let w=parseFloat(document.getElementById('layout-w').value)||0,h=parseFloat(document.getElementById('layout-h').value)||0,b=parseFloat(document.getElementById('layout-bleed').value)||0,m=parseFloat(document.getElementById('layout-margin').value)||0,sh=paperFormats[document.getElementById('layout-sheet').value],fit=document.getElementById('layout-fit').checked,crop=document.getElementById('layout-cropmarks').checked,cont=document.getElementById('layout-canvas-container');cont.innerHTML='';document.getElementById('layout-export-btn').disabled=true;if(w<=0||h<=0){document.getElementById('layout-stat-qty').innerText='0';document.getElementById('layout-stat-size').innerText='0×0';return}let iw=w+b*2,ih=h+b*2,pw=sh.w-m*2,ph=sh.h-m*2,c1=Math.floor(pw/iw),r1=Math.floor(ph/ih),t1=c1*r1,c2=Math.floor(pw/ih),r2=Math.floor(ph/iw),t2=c2*r2,total=Math.max(t1,t2);document.getElementById('layout-stat-qty').innerText=total;document.getElementById('layout-stat-size').innerText=`${iw}×${ih}`;if(total<=0){cont.innerHTML='<div style="color:red;font-weight:bold;margin-top:50px">Изделие не помещается на лист с такими полями!</div>';return}let rot=t2>t1,cols=rot?c2:c1,rows=rot?r2:r1,slotW=rot?ih:iw,slotH=rot?iw:ih;currentLayoutConf={sheetW:sh.w,sheetH:sh.h,margin:m,origW:w,origH:h,bleed:b,cols,rows,slotW,slotH,isRotated:rot,useCropMarks:crop,isFit:fit};let sc=400/sh.h,visW=sh.w*sc,visH=sh.h*sc,mp=m*sc,bw=cols*slotW*sc,bh=rows*slotH*sc,sx=mp+(pw*sc-bw)/2,sy=mp+(ph*sc-bh)/2,html='';for(let i=0;i<total;i++){let row=Math.floor(i/cols),col=i%cols,x=sx+col*slotW*sc,y=sy+row*slotH*sc,inner='';if(layoutImages.length){let a=layoutImages[i%layoutImages.length];inner=`<img src="${a.previewSrc}" class="${fit?'contain':'cover'}" style="${rot?'transform:rotate(90deg)':''}" title="${a.name}">`}else inner=`<span style="color:#8e44ad;font-weight:bold;opacity:.3;font-size:10px">${rot?h+'×'+w:w+'×'+h}</span>`;let bp=b*sc;html+=`<div class="slot-preview" style="left:${x}px;top:${y}px;width:${slotW*sc}px;height:${slotH*sc}px">${inner}<div class="slot-bleed-guide" style="left:${bp}px;top:${bp}px;right:${bp}px;bottom:${bp}px"></div></div>`}cont.innerHTML=`<div class="sheet-preview" style="width:${visW}px;height:${visH}px"><div class="margin-guide" style="left:${mp}px;top:${mp}px;right:${mp}px;bottom:${mp}px"></div>${html}</div>`;if(layoutImages.length)document.getElementById('layout-export-btn').disabled=false}
+async function renderAsset(a,conf){let dpi=LAYOUT_EXPORT_DPI,cw=Math.round(conf.slotW/25.4*dpi),ch=Math.round(conf.slotH/25.4*dpi),c=document.createElement('canvas'),x=c.getContext('2d');c.width=cw;c.height=ch;x.fillStyle='#fff';x.fillRect(0,0,cw,ch);let src,sw,sh;if(a.type==='image'){src=a.img;sw=src.width;sh=src.height}else{let page=await a.pdf.getPage(a.pageNumber),v=page.getViewport({scale:1}),rs=conf.isRotated?Math.max(ch/v.width,cw/v.height):Math.max(cw/v.width,ch/v.height),vp=page.getViewport({scale:Math.max(1,rs)}),pc=document.createElement('canvas'),px=pc.getContext('2d');pc.width=Math.floor(vp.width);pc.height=Math.floor(vp.height);px.fillStyle='#fff';px.fillRect(0,0,pc.width,pc.height);await page.render({canvasContext:px,viewport:vp}).promise;src=pc;sw=pc.width;sh=pc.height}x.save();x.translate(cw/2,ch/2);let s;if(conf.isRotated){x.rotate(Math.PI/2);s=conf.isFit?Math.min(ch/sw,cw/sh):Math.max(ch/sw,cw/sh)}else s=conf.isFit?Math.min(cw/sw,ch/sh):Math.max(cw/sw,ch/sh);x.drawImage(src,-sw*s/2,-sh*s/2,sw*s,sh*s);x.restore();return{dataUrl:c.toDataURL(a.type==='pdf'?'image/png':'image/jpeg',.98),format:a.type==='pdf'?'PNG':'JPEG'}}
+async function exportLayoutPDF(){if(!currentLayoutConf||!layoutImages.length)return;let btn=document.getElementById('layout-export-btn'),old=btn.innerHTML;btn.innerHTML=`<span class="iconify" data-icon="mdi:loading" data-spin="true"></span> Генерация PDF (${LAYOUT_EXPORT_DPI} DPI)...`;btn.disabled=true;await wait();try{let c=currentLayoutConf,{jsPDF}=window.jspdf,doc=new jsPDF({orientation:c.sheetW>c.sheetH?'l':'p',unit:'mm',format:[c.sheetW,c.sheetH],compress:true}),bw=c.cols*c.slotW,bh=c.rows*c.slotH,sx=c.margin+(c.sheetW-c.margin*2-bw)/2,sy=c.margin+(c.sheetH-c.margin*2-bh)/2,total=c.cols*c.rows,prep=[];for(let a of layoutImages)prep.push(await renderAsset(a,c));for(let i=0;i<total;i++){let r=Math.floor(i/c.cols),col=i%c.cols,p=prep[i%prep.length];doc.addImage(p.dataUrl,p.format,sx+col*c.slotW,sy+r*c.slotH,c.slotW,c.slotH,undefined,'FAST')}if(c.useCropMarks&&c.bleed>0){doc.setDrawColor(0,0,0);doc.setLineWidth(.2);let b=c.bleed;for(let r=0;r<=c.rows;r++){let y=sy+r*c.slotH;doc.line(sx-2,y+(r===0?b:-b),sx-6,y+(r===0?b:-b));doc.line(sx+bw+2,y+(r===0?b:-b),sx+bw+6,y+(r===0?b:-b))}for(let col=0;col<=c.cols;col++){let x=sx+col*c.slotW;doc.line(x+(col===0?b:-b),sy-2,x+(col===0?b:-b),sy-6);doc.line(x+(col===0?b:-b),sy+bh+2,x+(col===0?b:-b),sy+bh+6)}}doc.save(`Layout_N-up_${total}pcs_${LAYOUT_EXPORT_DPI}dpi.pdf`)}catch(e){console.error(e);alert('Ошибка генерации PDF. Подробности в консоли браузера.')}finally{btn.innerHTML=old;btn.disabled=false}}
+</script>
+</body>
+</html>
