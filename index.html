@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Orange Pro: Типография</title>
+<title>Копирка: Расчёт цен, процент заливки, конвертер фото</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -67,6 +67,8 @@ th.orange-head{background-color:var(--primary-color);border-color:var(--primary-
 tr:last-child td{border-bottom:none}tr:hover td{background-color:#fcfcfc}
 .cell-active{background-color:#ffe0b2!important;color:#d35400;font-weight:700}
 .calc-input{width:100%;padding:10px;box-sizing:border-box;border:1px solid #ddd;border-radius:6px;font-weight:bold;color:var(--primary-color);outline:none;transition:.2s;font-family:monospace;font-size:15px}
+.order-text-input{width:100%;padding:10px;box-sizing:border-box;border:1px solid #ddd;border-radius:6px;font-weight:bold;color:#155724;outline:none;transition:.2s;font-size:15px;background:#fff}
+.order-text-input:focus{border-color:#28a745;background:#f0fff4;box-shadow:0 0 0 3px rgba(40,167,69,.1)}
 .calc-input:focus{border-color:var(--primary-color);background:#fff5e6;box-shadow:0 0 0 3px rgba(255,107,0,.1)}
 td .calc-input{width:70px;text-align:center;padding:8px}
 .file-list{margin-top:20px}.file-item{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid #eee;border-radius:8px;margin-bottom:8px;background:white;transition:.2s}.file-item:hover{box-shadow:var(--shadow-sm);transform:translateX(2px)}.file-name{font-weight:600;width:40%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:8px}.file-status{color:#888;width:30%;text-align:right;font-size:13px}.file-action{width:20%;text-align:right}
@@ -86,7 +88,7 @@ td .calc-input{width:70px;text-align:center;padding:8px}
 
 <body>
 <div class="container">
-<h1><span class="iconify" data-icon="mdi:printer-3d-nozzle-outline" data-width="32"></span> Orange Pro: Типография</h1>
+<h1><span class="iconify" data-icon="mdi:printer-3d-nozzle-outline" data-width="32"></span> Копирка: Расчёт цен, процент заливки, конвертер фото</h1>
 
 <div class="controls-panel">
 <div class="tabs">
@@ -95,7 +97,7 @@ td .calc-input{width:70px;text-align:center;padding:8px}
 <div class="tab" onclick="setMode('hybrid')" id="tab-hybrid"><span class="iconify" data-icon="mdi:arrow-collapse-all"></span> А4 + Остальное сжать</div>
 <div class="tab" onclick="setMode('manual')" id="tab-manual"><span class="iconify" data-icon="mdi:calculator"></span> Ручной ввод</div>
 <div class="tab" onclick="setMode('converter')" id="tab-converter"><span class="iconify" data-icon="mdi:image-refresh"></span> Конвертер фото</div>
-<div class="tab" onclick="setMode('layout')" id="tab-layout"><span class="iconify" data-icon="mdi:view-grid-plus"></span> Спуск полос</div>
+<div class="tab" onclick="setMode('layout')" id="tab-layout"><span class="iconify" data-icon="mdi:view-grid-plus"></span> Раскладка</div>
 </div>
 
 <div class="options-row" id="auto-options">
@@ -148,6 +150,17 @@ td .calc-input{width:70px;text-align:center;padding:8px}
 </label>
 <div class="file-list" id="convFileList"></div>
 <button id="download-all-btn" onclick="downloadAllZip()"><span class="iconify" data-icon="mdi:zip-box"></span> Скачать всё архивом (ZIP)</button>
+
+<div id="order-section" style="display:none;margin-top:20px;background:#f0fff4;padding:20px;border-radius:12px;border:2px solid #28a745">
+<h3 style="margin-top:0;text-align:left;color:#155724"><span class="iconify" data-icon="mdi:cart-check"></span> Сохранить как заказ</h3>
+<div class="options-row" style="justify-content:flex-start;gap:15px;flex-wrap:wrap">
+<div><label>Размер бумаги:</label><div class="custom-select-wrapper" style="width:200px"><select id="order-size" class="custom-select-source"><option value="10x15">10 на 15 (А6)</option><option value="15x20">15 на 20 (А5)</option><option value="21x30">21 на 30 (А4)</option><option value="30x40">30 на 40 (А3)</option><option value="30x60">30 на 60</option></select></div></div>
+<div><label>Тип бумаги:</label><div class="custom-select-wrapper" style="width:180px"><select id="order-paper-type" class="custom-select-source"><option value="матовая">матовая</option><option value="глянцевая">глянцевая</option></select></div></div>
+<div><label>Тип полей:</label><div class="custom-select-wrapper" style="width:180px"><select id="order-margins" class="custom-select-source"><option value="без полей">без полей</option><option value="с полями">с полями</option></select></div></div>
+<div style="flex:1;min-width:200px"><label>Название точки:</label><input type="text" id="order-point-name" class="order-text-input" style="width:100%;color:#155724" placeholder="напр. деловой центр"></div>
+</div>
+<button class="btn-purple" style="background:#28a745;margin-top:15px" onclick="downloadOrderZip()"><span class="iconify" data-icon="mdi:package-down" style="font-size:20px"></span> Скачать архив заказа</button>
+</div>
 </div>
 
 <div id="layout-content" class="hidden">
@@ -818,9 +831,31 @@ function crc32(d){let c=0xFFFFFFFF;for(let i=0;i<d.length;i++)c=_crc32Table[(c^d
 function applyDPItoBlob(blob,dpi){return new Promise(res=>{let r=new FileReader();r.onload=e=>{let b=new Uint8Array(e.target.result);if(blob.type==='image/jpeg'){for(let i=0;i<b.length-18;i++)if(b[i]===255&&b[i+1]===224&&b[i+4]===74&&b[i+5]===70){b[i+11]=1;b[i+12]=Math.floor(dpi/256);b[i+13]=dpi%256;b[i+14]=Math.floor(dpi/256);b[i+15]=dpi%256;break}res(new Blob([b],{type:blob.type}))}else res(blob)};r.readAsArrayBuffer(blob)})}
 async function handleConvFiles(files){for(let i=0;i<files.length;i++){createConvRow(files[i],i);await processConvFile(files[i])}document.getElementById('converterInput').value=''}
 function createConvRow(file,i){let id=`cfile-${i}-${Date.now()}`,d=document.createElement('div');d.className='file-item';d.id=id;d.innerHTML=`<div class="file-name" title="${file.name}"><span class="iconify" data-icon="mdi:file-image"></span> ${file.name}</div><div class="file-status"><span class="loader"></span> Обработка...</div><div class="file-action"><a href="#" class="btn-download" download><span class="iconify" data-icon="mdi:download"></span> Скачать</a></div>`;convList.appendChild(d);file.uiId=id}
-async function processConvFile(file){let row=document.getElementById(file.uiId),st=row.querySelector('.file-status'),btn=row.querySelector('.btn-download'),fmt=document.getElementById('conv-format').value,q=parseInt(document.getElementById('conv-quality').value)/100,dpi=parseInt(document.getElementById('conv-dpi').value)||300,ext=fmt==='jpeg'?'.jpg':'.png';try{let blob,name=file.name.split('.').slice(0,-1).join('.')+ext;if(file.name.toLowerCase().match(/\.(heic|heif)$/)){blob=await heic2any({blob:file,toType:'image/'+fmt,quality:q});if(Array.isArray(blob))blob=blob[0]}else blob=await convertImageFormat(file,fmt,q);blob=await applyDPItoBlob(blob,dpi);let url=URL.createObjectURL(blob);st.innerHTML='<span style="color:green;font-weight:bold">Готово</span>';btn.href=url;btn.download=name;convertedFiles.push({name,blob});if(convertedFiles.length>1){dlBtn.style.display='block';dlBtn.innerText=`Скачать всё архивом (${convertedFiles.length})`}}catch(e){console.error(e);st.innerHTML='<span style="color:red">Ошибка</span>'}}
+async function processConvFile(file){let row=document.getElementById(file.uiId),st=row.querySelector('.file-status'),btn=row.querySelector('.btn-download'),fmt=document.getElementById('conv-format').value,q=parseInt(document.getElementById('conv-quality').value)/100,dpi=parseInt(document.getElementById('conv-dpi').value)||300,ext=fmt==='jpeg'?'.jpg':'.png';try{let blob,name=file.name.split('.').slice(0,-1).join('.')+ext;if(file.name.toLowerCase().match(/\.(heic|heif)$/)){blob=await heic2any({blob:file,toType:'image/'+fmt,quality:q});if(Array.isArray(blob))blob=blob[0]}else blob=await convertImageFormat(file,fmt,q);blob=await applyDPItoBlob(blob,dpi);let url=URL.createObjectURL(blob);st.innerHTML='<span style="color:green;font-weight:bold">Готово</span>';btn.href=url;btn.download=name;convertedFiles.push({name,blob});if(convertedFiles.length>1){dlBtn.style.display='block';dlBtn.innerText=`Скачать всё архивом (${convertedFiles.length})`}if(convertedFiles.length>=1){document.getElementById('order-section').style.display='block'}}catch(e){console.error(e);st.innerHTML='<span style="color:red">Ошибка</span>'}}
 function convertImageFormat(file,fmt,q){return new Promise((res,rej)=>{let img=new Image();img.onload=()=>{let c=document.createElement('canvas'),x=c.getContext('2d');c.width=img.width;c.height=img.height;if(fmt==='jpeg'){x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height)}x.drawImage(img,0,0);c.toBlob(b=>res(b),'image/'+fmt,q)};img.onerror=rej;img.src=URL.createObjectURL(file)})}
 async function downloadAllZip(){let z=new JSZip();convertedFiles.forEach(f=>z.file(f.name,f.blob));dlBtn.innerHTML='<span class="iconify" data-icon="mdi:loading" data-spin="true"></span> Архивация...';saveAs(await z.generateAsync({type:'blob'}),'images_converted.zip');dlBtn.innerHTML=`<span class="iconify" data-icon="mdi:zip-box"></span> Скачать всё архивом (${convertedFiles.length})`}
+async function downloadOrderZip(){
+if(!convertedFiles.length)return;
+const pointName=document.getElementById('order-point-name').value.trim();
+if(!pointName){alert('Введите название точки!');return}
+const sizeEl=document.getElementById('order-size');
+const paperType=document.getElementById('order-paper-type').value;
+const margins=document.getElementById('order-margins').value;
+const sizeLabel=sizeEl.options[sizeEl.selectedIndex].text.replace(/\s*\(.*\)/,'').replace(/\s+/g,' ').trim();
+const count=convertedFiles.length;
+const zipName=`${pointName}_${sizeLabel}_${paperType}_${margins}_${count}шт.zip`;
+const z=new JSZip();
+convertedFiles.forEach((f,i)=>{
+const ext=f.name.split('.').pop();
+const photoName=`${pointName}_${sizeLabel}_${paperType}_${margins}_${count}шт(${i+1}).${ext}`;
+z.file(photoName,f.blob);
+});
+const btn=document.querySelector('#order-section .btn-purple');
+const oldBtn=btn.innerHTML;
+btn.innerHTML='<span class="iconify" data-icon="mdi:loading" data-spin="true"></span> Архивация...';btn.disabled=true;
+try{saveAs(await z.generateAsync({type:'blob'}),zipName)}catch(e){console.error(e);alert('Ошибка при создании архива')}
+finally{btn.innerHTML=oldBtn;btn.disabled=false}
+}
 
 /* layout */
 let layoutImages=[],currentLayoutConf=null;const LAYOUT_EXPORT_DPI=600,paperFormats={SRA3:{w:320,h:450},A3:{w:297,h:420},A4:{w:210,h:297}};
